@@ -161,6 +161,21 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Patch in our own rendezvous server + key
+        # secrets.RS_PUB_KEY / secrets.RENDEZVOUS_SERVER (env-only, see top of
+        # this workflow) are NOT read by this codebase at build time -
+        # RENDEZVOUS_SERVERS/RS_PUB_KEY in hbb_common are plain string
+        # constants, not env!()/option_env!(). Patch them directly instead;
+        # this repo is private, so hardcoding here is fine.
+        shell: bash
+        run: |
+          set -e
+          FILE=libs/hbb_common/src/config.rs
+          grep -q 'rs-ny.rustdesk.com' "$FILE"
+          sed -i 's#pub const RENDEZVOUS_SERVERS: &\[&str\] = &\["rs-ny.rustdesk.com"\];#pub const RENDEZVOUS_SERVERS: \&[\&str] = \&["168.119.186.118"];#' "$FILE"
+          sed -i 's#pub const RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";#pub const RS_PUB_KEY: \&str = "CMxeB6EOVcp03duBpu16lxjhKXiuolfIt5dF+5gUTpo=";#' "$FILE"
+          grep -n 'RENDEZVOUS_SERVERS\|RS_PUB_KEY' "$FILE" | head -5
+
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
