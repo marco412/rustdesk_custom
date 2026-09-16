@@ -275,7 +275,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          prefix-key: ${{ matrix.job.os }}
+          # "-custom-server-v1" busts the old cache namespace: prefix-key alone
+          # doesn't change when only libs/hbb_common/src/config.rs is patched
+          # (that file isn't part of Cargo.lock's hash), so every earlier run
+          # today silently reused a stale, unpatched compiled hbb_common.rlib
+          # despite the source patch succeeding. Bump this suffix again if a
+          # future source patch ever needs to force a fresh rebuild.
+          prefix-key: ${{ matrix.job.os }}-custom-server-v1
 
       - name: Setup vcpkg with Github Actions binary cache
         uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
